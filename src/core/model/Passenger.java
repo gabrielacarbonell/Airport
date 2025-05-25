@@ -35,7 +35,7 @@ public class Passenger {
     }
 
     public void addFlight(Flight flight) {
-        this.flights.add(flight);
+        if(!this.flights.contains(flight))this.flights.add(flight);
     }
     
     public long getId() {

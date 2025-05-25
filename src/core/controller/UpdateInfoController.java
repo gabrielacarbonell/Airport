@@ -9,25 +9,19 @@ import core.controller.utils.Status;
 import core.model.Passenger;
 import core.model.storage.Storage;
 import java.time.LocalDate;
-import java.util.ArrayList;
 
 /**
  *
  * @author Gabyy
  */
-public class PassengerController {
-
-    public static Response createPassenger(String idTxt, String firstN, String lastN, String yearTxt, String monthTxt, String dayTxt, String phoneCTxt, String phoneTxt, String countryTxt) {
+public class UpdateInfoController {
+    public static Response updateInfo(long id, String firstN, String lastN, String yearTxt, String monthTxt, String dayTxt, String phoneCTxt, String phoneTxt, String countryTxt) {
         try {
-            long id, phone;
+            long phone;
             int month, day, year, phoneC;
             LocalDate birth;
-            Storage passengerStorage = Storage.getInstance();
-            ArrayList<Passenger> passengers = passengerStorage.getPassengers();
+            Storage passengerStorage = Storage.getInstance(); 
 
-            if (idTxt.equals("")) {
-                return new Response("Error: ID must be not empty.", Status.BAD_REQUEST);
-            }
             if (firstN.equals("")) {
                 return new Response("Error: First name must be not empty.", Status.BAD_REQUEST);
             }
@@ -51,23 +45,6 @@ public class PassengerController {
             }
             if (countryTxt.equals("")) {
                 return new Response("Error: Country must be not empty.", Status.BAD_REQUEST);
-            }
-            try {
-                if (idTxt.length()>15){
-                    return new Response("Error: ID must be less than 15 characters.", Status.BAD_REQUEST);
-                }
-                id = Long.parseLong(idTxt);
-            }catch (NumberFormatException e) {
-                return new Response("Error: ID must be a number.", Status.BAD_REQUEST);
-            }
-            if (id <= 0){
-                return new Response("Error: ID must be greater than 0.", Status.BAD_REQUEST);
-            }
-
-            for(Passenger passenger: passengers){
-                if(passenger.getId() == id){
-                    return new Response("Error: ID already exists.", Status.BAD_REQUEST);
-                }
             }
             try {
                 year = Integer.parseInt(yearTxt);
@@ -117,8 +94,17 @@ public class PassengerController {
             if (phoneTxt.length() > 15){
                 return new Response("Error: Phone number must be less than 15 characters.", Status.BAD_REQUEST);
             }
-            passengerStorage.addPassenger(new Passenger(id, firstN, lastN, birth, phoneC, phone, countryTxt));
-            return new Response("Passenger Register OK.",Status.OK);
+            for (Passenger p : passengerStorage.getPassengers()) {
+                if (p.getId() == id) {
+                    p.setBirthDate(birth);
+                    p.setCountry(countryTxt);
+                    p.setCountryPhoneCode(phoneC);
+                    p.setFirstname(firstN);
+                    p.setLastname(lastN);
+                    p.setPhone(phone);
+                }
+            }
+            return new Response("Info have been update.",Status.OK);
         } catch (Exception e) {
             return new Response("Error: El ID, el teléfono y la fecha de nacimiento deben ser números enteros.", Status.BAD_REQUEST);
         }

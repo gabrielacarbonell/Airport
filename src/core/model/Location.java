@@ -17,7 +17,7 @@ public class Location {
     private double airportLatitude;
     private double airportLongitude;
 
-    public Location(String airportId, String airportName, String airportCity, String airportCountry, double airportLatitude, double airportLongitude) {
+                       public Location(String airportId, String airportName, String airportCity, String airportCountry, double airportLatitude, double airportLongitude) {
         this.airportId = airportId;
         this.airportName = airportName;
         this.airportCity = airportCity;

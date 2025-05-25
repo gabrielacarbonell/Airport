@@ -4,15 +4,29 @@
  */
 package core.view;
 
+import core.controller.AddFlightController;
+import core.controller.DelayController;
+import core.controller.FlightController;
+import core.controller.LocationController;
+import core.controller.PassengerController;
+import core.controller.PlaneController;
+import core.controller.UpdateInfoController;
+import core.controller.tables.TableFlightsController;
+import core.controller.tables.TableLocationController;
+import core.controller.tables.TableMyFlightsController;
+import core.controller.tables.TablePassengerController;
+import core.controller.utils.JsonController;
+import core.controller.utils.Response;
+import core.controller.utils.StorageAdder;
 import core.model.Flight;
 import core.model.Location;
 import core.model.Passenger;
 import core.model.Plane;
 import java.awt.Color;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import org.json.JSONArray;
 
 /**
  *
@@ -28,6 +42,7 @@ public class AirportFrame extends javax.swing.JFrame {
     private ArrayList<Plane> planes;
     private ArrayList<Location> locations;
     private ArrayList<Flight> flights;
+    private JSONArray guardado = new JSONArray();
 
     public AirportFrame() {
         initComponents();
@@ -45,6 +60,26 @@ public class AirportFrame extends javax.swing.JFrame {
         this.generateHours();
         this.generateMinutes();
         this.blockPanels();
+
+        JsonController.readJson("passengers", userBox, guardado);
+        for (int i = 0; i < guardado.length(); i++) {
+            StorageAdder.storageAdd(guardado, "passengers");
+        }
+        JsonController.readJson("locations", flightRDL, guardado);
+        JsonController.readJson("locations", flightRAL, guardado);
+        JsonController.readJson("locations", flightRSL, guardado);
+        for (int i = 0; i < guardado.length(); i++) {
+            StorageAdder.storageAdd(guardado, "locations");
+        }
+        JsonController.readJson("planes", flightRPlane, guardado);
+        for (int i = 0; i < guardado.length(); i++) {
+            StorageAdder.storageAdd(guardado, "planes");
+        }
+        JsonController.readJson("flights", addFFlight, guardado);
+        JsonController.readJson("flights", delayFId, guardado);
+        for (int i = 0; i < guardado.length(); i++) {
+            StorageAdder.storageAdd(guardado, "flights");
+        }
     }
 
     private void blockPanels() {
@@ -1410,7 +1445,7 @@ public class AirportFrame extends javax.swing.JFrame {
 
         }
         for (int i = 1; i < jTabbedPane1.getTabCount(); i++) {
-                jTabbedPane1.setEnabledAt(i, true);
+            jTabbedPane1.setEnabledAt(i, true);
         }
         jTabbedPane1.setEnabledAt(5, false);
         jTabbedPane1.setEnabledAt(6, false);
@@ -1434,20 +1469,35 @@ public class AirportFrame extends javax.swing.JFrame {
 
     private void passengerRBtnRActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_passengerRBtnRActionPerformed
         // TODO add your handling code here:
-        long id = Long.parseLong(PassengerRId.getText());
+        String id = PassengerRId.getText();
         String firstname = passengerRFN.getText();
         String lastname = passengerRLN.getText();
-        int year = Integer.parseInt(passengerRBY.getText());
-        int month = Integer.parseInt(passengerRBM.getItemAt(passengerRBM.getSelectedIndex()));
-        int day = Integer.parseInt(passengerRBD.getItemAt(passengerRBD.getSelectedIndex()));
-        int phoneCode = Integer.parseInt(passengerRPC.getText());
-        long phone = Long.parseLong(passengerRPN.getText());
+        String year = passengerRBY.getText();
+        String month = passengerRBM.getItemAt(passengerRBM.getSelectedIndex());
+        String day = passengerRBD.getItemAt(passengerRBD.getSelectedIndex());
+        String phoneCode = passengerRPC.getText();
+        String phone = passengerRPN.getText();
         String country = passengerRC.getText();
 
-        LocalDate birthDate = LocalDate.of(year, month, day);
+        Response response = PassengerController.createPassenger(id, firstname, lastname, year, month, day, phoneCode, phone, country);
+        if (response.getStatus() >= 500) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.ERROR_MESSAGE);
+        } else if (response.getStatus() >= 400) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
 
-        this.passengers.add(new Passenger(id, firstname, lastname, birthDate, phoneCode, phone, country));
-        this.userBox.addItem("" + id);
+            // Limpiar campos si fue exitoso
+            PassengerRId.setText("");
+            passengerRFN.setText("");
+            passengerRLN.setText("");
+            passengerRBY.setText("");
+            passengerRPC.setText("");
+            passengerRPN.setText("");
+            passengerRC.setText("");
+
+            this.userBox.addItem("" + id);
+        }
     }//GEN-LAST:event_passengerRBtnRActionPerformed
 
     private void airplaneRBtnRActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_airplaneRBtnRActionPerformed
@@ -1455,11 +1505,24 @@ public class AirportFrame extends javax.swing.JFrame {
         String id = airplaneRId.getText();
         String brand = airplaneRBrand.getText();
         String model = airplaneRModel.getText();
-        int maxCapacity = Integer.parseInt(airplaneRMC.getText());
+        String maxCapacity = airplaneRMC.getText();
         String airline = airplaneRAirline.getText();
 
-        this.planes.add(new Plane(id, brand, model, maxCapacity, airline));
+        Response response = PlaneController.createPlane(id, brand, model, maxCapacity, airline);
+        if (response.getStatus() >= 500) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.ERROR_MESSAGE);
+        } else if (response.getStatus() >= 400) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
 
+            // Limpiar campos si fue exitoso
+            airplaneRId.setText("");
+            airplaneRBrand.setText("");
+            airplaneRModel.setText("");
+            airplaneRMC.setText("");
+            airplaneRAirline.setText("");
+        }
         this.flightRPlane.addItem(id);
     }//GEN-LAST:event_airplaneRBtnRActionPerformed
 
@@ -1469,10 +1532,24 @@ public class AirportFrame extends javax.swing.JFrame {
         String name = locationRAN.getText();
         String city = locationRACity.getText();
         String country = locationRAC.getText();
-        double latitude = Double.parseDouble(locationRALat.getText());
-        double longitude = Double.parseDouble(locationRALon.getText());
+        String latitude = locationRALat.getText();
+        String longitude = locationRALon.getText();
 
-        this.locations.add(new Location(id, name, city, country, latitude, longitude));
+        Response response = LocationController.createLocation(id, name, city, country, latitude, longitude);
+        if (response.getStatus() >= 500) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.ERROR_MESSAGE);
+        } else if (response.getStatus() >= 400) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
+        }
+
+        locationRAId.setText("");
+        locationRAN.setText("");
+        locationRACity.setText("");
+        locationRAC.setText("");
+        locationRALat.setText("");
+        locationRALon.setText("");
 
         this.flightRDL.addItem(id);
         this.flightRAL.addItem(id);
@@ -1486,45 +1563,45 @@ public class AirportFrame extends javax.swing.JFrame {
         String departureLocationId = flightRDL.getItemAt(flightRDL.getSelectedIndex());
         String arrivalLocationId = flightRAL.getItemAt(flightRAL.getSelectedIndex());
         String scaleLocationId = flightRSL.getItemAt(flightRSL.getSelectedIndex());
-        int year = Integer.parseInt(flightRDDY.getText());
-        int month = Integer.parseInt(flightRDDMonth.getItemAt(flightRDDMonth.getSelectedIndex()));
-        int day = Integer.parseInt(flightRDDD.getItemAt(flightRDDD.getSelectedIndex()));
-        int hour = Integer.parseInt(flightRDDH.getItemAt(flightRDDH.getSelectedIndex()));
-        int minutes = Integer.parseInt(flightRDDMinute.getItemAt(flightRDDMinute.getSelectedIndex()));
-        int hoursDurationsArrival = Integer.parseInt(flightRALDH.getItemAt(flightRALDH.getSelectedIndex()));
-        int minutesDurationsArrival = Integer.parseInt(flightRALDM.getItemAt(flightRALDM.getSelectedIndex()));
-        int hoursDurationsScale = Integer.parseInt(flightRSLDH.getItemAt(flightRSLDH.getSelectedIndex()));
-        int minutesDurationsScale = Integer.parseInt(flightRSLDM.getItemAt(flightRSLDM.getSelectedIndex()));
+        String year = flightRDDY.getText();
+        String month = (String) flightRDDMonth.getItemAt(flightRDDMonth.getSelectedIndex());
+        String day = (String) flightRDDD.getItemAt(flightRDDD.getSelectedIndex());
+        String hour = String.valueOf(flightRDDH.getItemAt(flightRDDH.getSelectedIndex()));
+        String minutes = flightRDDMinute.getItemAt(flightRDDMinute.getSelectedIndex());
+        String hoursDurationsArrival = flightRALDH.getItemAt(flightRALDH.getSelectedIndex());
+        String minutesDurationsArrival = flightRALDM.getItemAt(flightRALDM.getSelectedIndex());
+        String hoursDurationsScale = flightRSLDH.getItemAt(flightRSLDH.getSelectedIndex());
+        String minutesDurationsScale = flightRSLDM.getItemAt(flightRSLDM.getSelectedIndex());
 
-        LocalDateTime departureDate = LocalDateTime.of(year, month, day, hour, minutes);
-
-        Plane plane = null;
-        for (Plane p : this.planes) {
-            if (planeId.equals(p.getId())) {
-                plane = p;
-            }
-        }
-
-        Location departure = null;
-        Location arrival = null;
-        Location scale = null;
-        for (Location location : this.locations) {
-            if (departureLocationId.equals(location.getAirportId())) {
-                departure = location;
-            }
-            if (arrivalLocationId.equals(location.getAirportId())) {
-                arrival = location;
-            }
-            if (scaleLocationId.equals(location.getAirportId())) {
-                scale = location;
-            }
-        }
-
-        if (scale == null) {
-            this.flights.add(new Flight(id, plane, departure, arrival, departureDate, hoursDurationsArrival, minutesDurationsArrival));
+        Response response;
+        if (scaleLocationId.replaceAll(" ", "").isEmpty()) {
+            response = FlightController.createFlight(id, planeId, departureLocationId, "", arrivalLocationId, year, month, day, hour, minutes, hoursDurationsArrival, minutesDurationsArrival, hoursDurationsScale, minutesDurationsScale);
         } else {
-            this.flights.add(new Flight(id, plane, departure, scale, arrival, departureDate, hoursDurationsArrival, minutesDurationsArrival, hoursDurationsScale, minutesDurationsScale));
+            response = FlightController.createFlight(id, planeId, departureLocationId, scaleLocationId, arrivalLocationId, year, month, day, hour, minutes, hoursDurationsArrival, minutesDurationsArrival, hoursDurationsScale, minutesDurationsScale);
         }
+
+        if (response.getStatus() >= 500) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.ERROR_MESSAGE);
+        } else if (response.getStatus() >= 400) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
+        }
+        flightRId.setText("");
+        flightRPlane.setSelectedIndex(0);
+        flightRDL.setSelectedIndex(0);
+        flightRAL.setSelectedIndex(0);
+        flightRSL.setSelectedIndex(0);
+        flightRDDY.setText("");
+        flightRDDMonth.setSelectedIndex(0);
+        flightRDDD.setSelectedIndex(0);
+        flightRDDH.setSelectedIndex(0);
+        flightRDDMinute.setSelectedIndex(0);
+        flightRALDH.setSelectedIndex(0);
+        flightRALDM.setSelectedIndex(0);
+        flightRSLDH.setSelectedIndex(0);
+        flightRSLDM.setSelectedIndex(0);
+
 
         this.addFFlight.addItem(id);
     }//GEN-LAST:event_flightRBtnRActionPerformed
@@ -1534,122 +1611,133 @@ public class AirportFrame extends javax.swing.JFrame {
         long id = Long.parseLong(updateIId.getText());
         String firstname = updateIFN.getText();
         String lastname = updateILN.getText();
-        int year = Integer.parseInt(updateIBY.getText());
-        int month = Integer.parseInt(passengerRBM.getItemAt(updateIBM.getSelectedIndex()));
-        int day = Integer.parseInt(passengerRBD.getItemAt(updateIBD.getSelectedIndex()));
-        int phoneCode = Integer.parseInt(updateIPC.getText());
-        long phone = Long.parseLong(updateIPN.getText());
+        String year = updateIBY.getText();
+        String month = passengerRBM.getItemAt(updateIBM.getSelectedIndex());
+        String day = passengerRBD.getItemAt(updateIBD.getSelectedIndex());
+        String phoneCode = updateIPC.getText();
+        String phone = updateIPN.getText();
         String country = updateIC.getText();
 
-        LocalDate birthDate = LocalDate.of(year, month, day);
-
-        Passenger passenger = null;
-        for (Passenger p : this.passengers) {
-            if (p.getId() == id) {
-                passenger = p;
-            }
+        
+        Response response = UpdateInfoController.updateInfo(id, firstname, lastname, year, month, day, phoneCode, phone, country);
+        if (response.getStatus() >= 500) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.ERROR_MESSAGE);
+        } else if (response.getStatus() >= 400) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
         }
-
-        passenger.setFirstname(firstname);
-        passenger.setLastname(lastname);
-        passenger.setBirthDate(birthDate);
-        passenger.setCountryPhoneCode(phoneCode);
-        passenger.setPhone(phone);
-        passenger.setCountry(country);
+        
+        updateIId.setText("");
+        updateIFN.setText("");
+        updateILN.setText("");
+        updateIBY.setText("");
+        updateIPC.setText("");
+        updateIPN.setText("");
+        updateIC.setText("");
+        this.userBox.setSelectedIndex(0);
     }//GEN-LAST:event_updateIBtnUActionPerformed
 
     private void addFBtnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addFBtnAddActionPerformed
-        // TODO add your handling code here:
-        long passengerId = Long.parseLong(addFId.getText());
+        String passengerId = addFId.getText();
         String flightId = addFFlight.getItemAt(addFFlight.getSelectedIndex());
 
-        Passenger passenger = null;
-        Flight flight = null;
+        Response response = AddFlightController.addToFlight(passengerId, flightId);
 
-        for (Passenger p : this.passengers) {
-            if (p.getId() == passengerId) {
-                passenger = p;
-            }
+        if (response.getStatus() >= 500) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.ERROR_MESSAGE);
+        } else if (response.getStatus() >= 400) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
         }
-
-        for (Flight f : this.flights) {
-            if (flightId.equals(f.getId())) {
-                flight = f;
-            }
-        }
-
-        passenger.addFlight(flight);
-        flight.addPassenger(passenger);
+        addFId.setText("");
+        addFFlight.setSelectedIndex(0);
     }//GEN-LAST:event_addFBtnAddActionPerformed
 
     private void delayFBtnDActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_delayFBtnDActionPerformed
         // TODO add your handling code here:
         String flightId = delayFId.getItemAt(delayFId.getSelectedIndex());
-        int hours = Integer.parseInt(delayFHour.getItemAt(delayFHour.getSelectedIndex()));
-        int minutes = Integer.parseInt(delayFM.getItemAt(delayFM.getSelectedIndex()));
+        String hours = delayFHour.getItemAt(delayFHour.getSelectedIndex());
+        String minutes = delayFM.getItemAt(delayFM.getSelectedIndex());
 
-        Flight flight = null;
-        for (Flight f : this.flights) {
-            if (flightId.equals(f.getId())) {
-                flight = f;
-            }
+        Response response = DelayController.addDelay(flightId, hours, minutes);
+        if (response.getStatus() >= 500) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.ERROR_MESSAGE);
+        } else if (response.getStatus() >= 400) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
         }
-
-        flight.delay(hours, minutes);
+        delayFId.setSelectedIndex(0);
+        delayFHour.setSelectedIndex(0);
+        delayFM.setSelectedIndex(0);
     }//GEN-LAST:event_delayFBtnDActionPerformed
 
     private void showMFBtnRActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showMFBtnRActionPerformed
         // TODO add your handling code here:
-        long passengerId = Long.parseLong(userBox.getItemAt(userBox.getSelectedIndex()));
+        String passengerId = userBox.getItemAt(userBox.getSelectedIndex());
 
-        Passenger passenger = null;
-        for (Passenger p : this.passengers) {
-            if (p.getId() == passengerId) {
-                passenger = p;
-            }
-        }
-
-        ArrayList<Flight> flights = passenger.getFlights();
         DefaultTableModel model = (DefaultTableModel) showMFTable.getModel();
-        model.setRowCount(0);
-        for (Flight flight : flights) {
-            model.addRow(new Object[]{flight.getId(), flight.getDepartureDate(), flight.calculateArrivalDate()});
+        Response response = TableMyFlightsController.updateTable(model, passengerId);
+        if (response.getStatus() >= 500) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.ERROR_MESSAGE);
+        } else if (response.getStatus() >= 400) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
         }
+
     }//GEN-LAST:event_showMFBtnRActionPerformed
 
     private void showPassBtnRActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showPassBtnRActionPerformed
         // TODO add your handling code here:
         DefaultTableModel model = (DefaultTableModel) showPassTable.getModel();
-        model.setRowCount(0);
-        for (Passenger passenger : this.passengers) {
-            model.addRow(new Object[]{passenger.getId(), passenger.getFullname(), passenger.getBirthDate(), passenger.calculateAge(), passenger.generateFullPhone(), passenger.getCountry(), passenger.getNumFlights()});
+        Response response = TablePassengerController.updateTable(model);
+        if (response.getStatus() >= 500) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.ERROR_MESSAGE);
+        } else if (response.getStatus() >= 400) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
         }
     }//GEN-LAST:event_showPassBtnRActionPerformed
 
     private void showAFBtnRActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showAFBtnRActionPerformed
-        // TODO add your handling code here:
         DefaultTableModel model = (DefaultTableModel) showAFTable.getModel();
-        model.setRowCount(0);
-        for (Flight flight : this.flights) {
-            model.addRow(new Object[]{flight.getId(), flight.getDepartureLocation().getAirportId(), flight.getArrivalLocation().getAirportId(), (flight.getScaleLocation() == null ? "-" : flight.getScaleLocation().getAirportId()), flight.getDepartureDate(), flight.calculateArrivalDate(), flight.getPlane().getId(), flight.getNumPassengers()});
+        Response response = TableFlightsController.updateFlightList(model);
+        if (response.getStatus() >= 500) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.ERROR_MESSAGE);
+        } else if (response.getStatus() >= 400) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
         }
     }//GEN-LAST:event_showAFBtnRActionPerformed
 
     private void showPlaneBtnRActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showPlaneBtnRActionPerformed
         // TODO add your handling code here:
         DefaultTableModel model = (DefaultTableModel) showPlaneTable.getModel();
-        model.setRowCount(0);
-        for (Plane plane : this.planes) {
-            model.addRow(new Object[]{plane.getId(), plane.getBrand(), plane.getModel(), plane.getMaxCapacity(), plane.getAirline(), plane.getNumFlights()});
+        Response response = TableFlightsController.updateFlightList(model);
+        if (response.getStatus() >= 500) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.ERROR_MESSAGE);
+        } else if (response.getStatus() >= 400) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
         }
     }//GEN-LAST:event_showPlaneBtnRActionPerformed
 
     private void showALBtnRActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showALBtnRActionPerformed
         // TODO add your handling code here:
         DefaultTableModel model = (DefaultTableModel) ShowALTable.getModel();
-        model.setRowCount(0);
-        for (Location location : this.locations) {
-            model.addRow(new Object[]{location.getAirportId(), location.getAirportName(), location.getAirportCity(), location.getAirportCountry()});
+        Response response = TableLocationController.updateLocationList(model);
+        if (response.getStatus() >= 500) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.ERROR_MESSAGE);
+        } else if (response.getStatus() >= 400) {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Error " + response.getStatus(), JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, response.getMessage(), "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
         }
     }//GEN-LAST:event_showALBtnRActionPerformed
 
@@ -1660,11 +1748,10 @@ public class AirportFrame extends javax.swing.JFrame {
     private void userBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_userBoxActionPerformed
         try {
             String id = userBox.getSelectedItem().toString();
-            if (! id.equals(userBox.getItemAt(0))) {
+            if (!id.equals(userBox.getItemAt(0))) {
                 updateIId.setText(id);
                 addFId.setText(id);
-            }
-            else{
+            } else {
                 updateIId.setText("");
                 addFId.setText("");
             }
@@ -1675,7 +1762,6 @@ public class AirportFrame extends javax.swing.JFrame {
     /**
      * @param args the command line arguments
      */
-    
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField PassengerRId;
