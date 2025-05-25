@@ -44,10 +44,8 @@ public class JsonConverter {
                         args[i] = LocalDateTime.parse(json.getString(name));
                     } else if (type == Plane.class) {
                         String planeId = json.getString(name);
-                        System.out.println(planeId);
                         args[i] = Storage.getInstance().getPlanes()
                                 .stream().filter(p -> p.getId().equals(planeId)).findFirst().orElse(null);
-                        System.out.println(args[i].getClass());
                     } else if (type == Location.class) {
                         // Permite null (ej. scaleLocation)
                         String locId = json.optString(name, null);

@@ -23,17 +23,12 @@ public class TableFlightsController {
             model.setRowCount(0); // Limpiar el modelo
             Storage flightStorage = Storage.getInstance();
             ArrayList<Flight> flights = flightStorage.getFlights();
-            for(Flight f : flights){
-                System.out.println(f.getScaleLocation());
-            }
-            System.out.println("11111");
             if (flights == null || flights.isEmpty()) {
                 return new Response("The list is empty.", Status.NO_CONTENT, flights.clone());
             }
 
             // Ordenar por Fecha de salida ascendente
             flights.sort(Comparator.comparing(Flight::getDepartureDate));
-            System.out.println("22222");
             for (Flight flight : flights) {
                 if (flight.getScaleLocation()!= null) {
                     model.addRow(new Object[]{

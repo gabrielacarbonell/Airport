@@ -35,9 +35,7 @@ public class StorageAdder {
                 for (int i = 0; i < objeto.length(); i++) {
                     JSONObject json = objeto.getJSONObject(i);
                     Flight fli = JsonConverter.convertToObject(json, Flight.class);
-                    System.out.println("111");
-                    System.out.println(fli.getPlane().getId());
-                    System.out.println("2222");
+
                     storage.addFlight(fli);
                 }
 
